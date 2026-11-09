@@ -6,7 +6,6 @@ const EGG_GROUPS = ["巨灵组", "两栖组", "昆虫组", "天空组", "动物�
 
 // 获取图标路径 (在 Electron 中处理)
 function getIconPath(iconName) {
-    // 打包后资源路径在 resources 下
     const isPackaged = __dirname.includes('app.asar');
     const base = isPackaged ? path.join(process.resourcesPath, 'icons') : path.join(__dirname, 'icons');
     return `file://${path.join(base, iconName)}`;
@@ -42,7 +41,6 @@ function setDefaultDate() {
 // ========== 仓库逻辑 ==========
 async function loadWarehouse() {
     let sql = `SELECT * FROM eggs WHERE status IN ('在库', '需售后')`;
-    // 这里可以扩展筛选参数拼接
     const rows = await ipcRenderer.invoke('db-query', sql);
     const tbody = document.querySelector('#warehouseTable tbody');
     tbody.innerHTML = '';
@@ -123,7 +121,6 @@ async function saveEgg() {
 }
 
 function editEgg(row) {
-    // 这里可以写回显逻辑，为了演示省略
     alert('编辑功能待实现：' + row.name);
 }
 
