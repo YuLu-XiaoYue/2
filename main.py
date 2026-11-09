@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QDialogButtonBox, QCheckBox, QDateEdit, QTimeEdit, 
                                QHeaderView, QMessageBox, QListWidget, QListWidgetItem)
 from PySide6.QtCore import Qt, QDate, QTime
-from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtGui import QIcon, QPixmap, QColor
 
 # ================= 数据库配置 =================
 DB_NAME = "lock_kingdom.db"
@@ -41,8 +41,24 @@ def init_db():
 # ================= 数据字典 =================
 PERSONALITIES = ["开朗", "胆小", "急躁", "平和", "沉默", "踏实", "固执", "聪明", "悠闲", "懒散", "天真", "大胆", "调皮", "勇敢", "逞强", "稳重", "坦率", "专注", "偏执", "冷静", "理性", "警惕", "温顺", "害羞", "慎重", "焦虑", "莽撞", "热情", "忧郁", "粗心"]
 EGG_GROUPS = ["巨灵组", "两栖组", "昆虫组", "天空组", "动物组", "妖精组", "植物组", "拟人组", "软体组", "大地组", "魔力组", "海洋组", "龙组", "机械组"]
-MEDALS_SIZE = ["无", "大块头", "满重", "小不点", "满轻"]
-MEDALS_SOUND = ["无", "婉转声", "满音婉转声", "粗嗓门", "满音粗嗓门"]
+
+# 奖牌字典 (文字 : 图标文件名)
+MEDALS_SIZE_DICT = {
+    "无": "",
+    "大块头": "big.png",
+    "满重": "heavy.png",
+    "小不点": "small.png",
+    "满轻": "light.png"
+}
+
+MEDALS_SOUND_DICT = {
+    "无": "",
+    "婉转声": "sound_melodious.png",
+    "满音婉转声": "sound_full_melodious.png",
+    "粗嗓门": "sound_rough.png",
+    "满音粗嗓门": "sound_full_rough.png"
+}
+
 STATUS_OPTIONS = ["在库", "已售出", "需售后", "补发蛋", "已售后"]
 
 # 获取图标路径
@@ -113,7 +129,7 @@ class PriceInput(QLineEdit):
     def __init__(self):
         super().__init__()
         self.setPlaceholderText("自动计算/手动修改")
-        # 默认价格区间示例
+        # 默认价格区间示例 (最低重量, 最高重量, 价格)
         self.price_ranges = [(0, 1.5, 1.0), (1.5, 3, 1.5), (3, 6, 2.5), (6, 100, 5.0)]
 
     def update_price_by_weight(self, weight_str):
@@ -169,8 +185,10 @@ class MainWindow(QMainWindow):
         # 全局筛选
         self.filter_account = QComboBox(); self.filter_account.addItem("全部账号")
         self.filter_name = QComboBox(); self.filter_name.addItem("全部精灵蛋")
+        
         self.filter_medal = QComboBox(); self.filter_medal.addItem("全部奖牌")
-        self.filter_medal.addItems(MEDALS_SIZE[1:] + MEDALS_SOUND[1:])
+        self.filter_medal.addItems(list(MEDALS_SIZE_DICT.keys())[1:] + list(MEDALS_SOUND_DICT.keys())[1:])
+        
         self.filter_nest = QComboBox(); self.filter_nest.addItems(["全部窝", "普窝", "绿窝"])
         self.filter_sort = QComboBox(); self.filter_sort.addItems(["默认排序", "重量由轻到重", "重量由重到轻", "时间由近到远", "时间由远到近"])
         
@@ -224,17 +242,41 @@ class MainWindow(QMainWindow):
             
             # 字段映射: id[0], account[1], name[2], personality[3], size[4], weight[5], date[6], price[7], status[8], notes[9], medal1[10], medal2[11], nest_type[12]
             self.table_warehouse.setItem(idx, 0, QTableWidgetItem(str(idx + 1)))
-            self.table_warehouse.setItem(idx, 1, QTableWidgetItem(row[1]))
-            self.table_warehouse.setItem(idx, 2, QTableWidgetItem(row[2]))
-            self.table_warehouse.setItem(idx, 3, QTableWidgetItem(row[3]))
+            self.table_warehouse.setItem(idx, 1, QTableWidgetItem(str(row[1])))
+            self.table_warehouse.setItem(idx, 2, QTableWidgetItem(str(row[2])))
+            self.table_warehouse.setItem(idx, 3, QTableWidgetItem(str(row[3])))
             self.table_warehouse.setItem(idx, 4, QTableWidgetItem(str(row[4])))
             self.table_warehouse.setItem(idx, 5, QTableWidgetItem(str(row[5])))
-            self.table_warehouse.setItem(idx, 6, QTableWidgetItem(row[6]))
+            self.table_warehouse.setItem(idx, 6, QTableWidgetItem(str(row[6])))
             self.table_warehouse.setItem(idx, 7, QTableWidgetItem(str(row[7])))
-            self.table_warehouse.setItem(idx, 8, QTableWidgetItem(row[8]))
-            self.table_warehouse.setItem(idx, 9, QTableWidgetItem(row[9]))
-            self.table_warehouse.setItem(idx, 10, QTableWidgetItem(row[10]))
-            self.table_warehouse.setItem(idx, 11, QTableWidgetItem(row[11]))
+            self.table_warehouse.setItem(idx, 8, QTableWidgetItem(str(row[8])))
+            self.table_warehouse.setItem(idx, 9, QTableWidgetItem(str(row[9])))
+            
+            # 尺寸奖牌图标显示
+            if row[10] and row[10] in MEDALS_SIZE_DICT and MEDALS_SIZE_DICT[row[10]] != "":
+                lbl_medal1 = QLabel()
+                pix1 = QPixmap(get_icon(MEDALS_SIZE_DICT[row[10]]))
+                if not pix1.isNull():
+                    lbl_medal1.setPixmap(pix1.scaled(30, 30, Qt.KeepAspectRatio))
+                    lbl_medal1.setToolTip(row[10]) 
+                else:
+                    lbl_medal1.setText(row[10])
+                self.table_warehouse.setCellWidget(idx, 10, lbl_medal1)
+            else:
+                self.table_warehouse.setItem(idx, 10, QTableWidgetItem(""))
+    
+            # 声音奖牌图标显示
+            if row[11] and row[11] in MEDALS_SOUND_DICT and MEDALS_SOUND_DICT[row[11]] != "":
+                lbl_medal2 = QLabel()
+                pix2 = QPixmap(get_icon(MEDALS_SOUND_DICT[row[11]]))
+                if not pix2.isNull():
+                    lbl_medal2.setPixmap(pix2.scaled(30, 30, Qt.KeepAspectRatio))
+                    lbl_medal2.setToolTip(row[11])
+                else:
+                    lbl_medal2.setText(row[11])
+                self.table_warehouse.setCellWidget(idx, 11, lbl_medal2)
+            else:
+                self.table_warehouse.setItem(idx, 11, QTableWidgetItem(""))
             
             # 窝类型图标显示
             lbl_nest = QLabel()
@@ -324,12 +366,12 @@ class MainWindow(QMainWindow):
         
         col2.addWidget(QLabel("尺寸奖牌(互斥)："))
         medal1_combo = QComboBox()
-        medal1_combo.addItems(MEDALS_SIZE)
+        medal1_combo.addItems(list(MEDALS_SIZE_DICT.keys()))
         col2.addWidget(medal1_combo)
         
         col2.addWidget(QLabel("声音奖牌(互斥)："))
         medal2_combo = QComboBox()
-        medal2_combo.addItems(MEDALS_SOUND)
+        medal2_combo.addItems(list(MEDALS_SOUND_DICT.keys()))
         col2.addWidget(medal2_combo)
         
         col2.addWidget(QLabel("窝类型："))
@@ -347,16 +389,16 @@ class MainWindow(QMainWindow):
         
         # 如果是编辑，回显数据
         if row_data:
-            name_input.setText(row_data[2])
-            personality_input.setText(row_data[3])
+            name_input.setText(str(row_data[2]))
+            personality_input.setText(str(row_data[3]))
             size_input.setText(str(row_data[4]))
             weight_input.setText(str(row_data[5]))
-            date_input.setText(row_data[6])
+            date_input.setText(str(row_data[6]))
             price_input.setText(str(row_data[7]))
-            status_combo.setCurrentText(row_data[8])
-            notes_input.setText(row_data[9])
-            medal1_combo.setCurrentText(row_data[10])
-            medal2_combo.setCurrentText(row_data[11])
+            status_combo.setCurrentText(str(row_data[8]))
+            notes_input.setText(str(row_data[9]))
+            medal1_combo.setCurrentText(str(row_data[10]))
+            medal2_combo.setCurrentText(str(row_data[11]))
             nest_combo.setCurrentText("绿窝" if row_data[12] == "green_nest" else "普窝")
             
         def save_data():
@@ -412,12 +454,12 @@ class MainWindow(QMainWindow):
         for idx, row in enumerate(cursor.fetchall()):
             self.table_production.insertRow(idx)
             self.table_production.setItem(idx, 0, QTableWidgetItem(str(idx + 1)))
-            self.table_production.setItem(idx, 1, QTableWidgetItem(row[1]))
-            self.table_production.setItem(idx, 2, QTableWidgetItem(row[2]))
-            self.table_production.setItem(idx, 3, QTableWidgetItem(row[3]))
-            self.table_production.setItem(idx, 4, QTableWidgetItem(row[4]))
-            self.table_production.setItem(idx, 5, QTableWidgetItem(row[5]))
-            self.table_production.setItem(idx, 6, QTableWidgetItem(row[6]))
+            self.table_production.setItem(idx, 1, QTableWidgetItem(str(row[1])))
+            self.table_production.setItem(idx, 2, QTableWidgetItem(str(row[2])))
+            self.table_production.setItem(idx, 3, QTableWidgetItem(str(row[3])))
+            self.table_production.setItem(idx, 4, QTableWidgetItem(str(row[4])))
+            self.table_production.setItem(idx, 5, QTableWidgetItem(str(row[5])))
+            self.table_production.setItem(idx, 6, QTableWidgetItem(str(row[6])))
         conn.close()
 
     def add_production_dialog(self):
@@ -438,11 +480,16 @@ class MainWindow(QMainWindow):
             layout.addWidget(w)
             
         btn = QPushButton("保存")
-        btn.clicked.connect(lambda: (
-            sqlite3.connect(DB_NAME).execute("INSERT INTO production_lines (account_name, account_id, egg_name, personality, decibel, egg_group) VALUES (?, ?, ?, ?, ?, ?)", 
-                                             (acc_name.text(), acc_id.text(), egg_name.text(), personality.text(), decibel.text(), egg_group.text())).connection.commit(),
-            dialog.accept(), self.refresh_all_tables()
-        ))
+        def save_prod():
+            conn = sqlite3.connect(DB_NAME)
+            conn.execute("INSERT INTO production_lines (account_name, account_id, egg_name, personality, decibel, egg_group) VALUES (?, ?, ?, ?, ?, ?)", 
+                         (acc_name.text(), acc_id.text(), egg_name.text(), personality.text(), decibel.text(), egg_group.text()))
+            conn.commit()
+            conn.close()
+            dialog.accept()
+            self.refresh_all_tables()
+            
+        btn.clicked.connect(save_prod)
         layout.addWidget(btn)
         dialog.exec()
 
@@ -466,23 +513,23 @@ class MainWindow(QMainWindow):
             self.table_sold.insertRow(idx)
             # 已售出数据锁定，不可编辑，只能改状态
             self.table_sold.setItem(idx, 0, QTableWidgetItem(str(idx + 1)))
-            self.table_sold.setItem(idx, 1, QTableWidgetItem(row[1]))
-            self.table_sold.setItem(idx, 2, QTableWidgetItem(row[2]))
-            self.table_sold.setItem(idx, 3, QTableWidgetItem(row[3]))
-            self.table_sold.setItem(idx, 5, QTableWidgetItem(row[5]))
-            self.table_sold.setItem(idx, 6, QTableWidgetItem(row[7]))
+            self.table_sold.setItem(idx, 1, QTableWidgetItem(str(row[1])))
+            self.table_sold.setItem(idx, 2, QTableWidgetItem(str(row[2])))
+            self.table_sold.setItem(idx, 3, QTableWidgetItem(str(row[3])))
+            self.table_sold.setItem(idx, 5, QTableWidgetItem(str(row[5])))
+            self.table_sold.setItem(idx, 6, QTableWidgetItem(str(row[7])))
             
             # 状态可编辑
             status_combo = QComboBox()
             status_combo.addItems(["已售出", "补发蛋", "需售后"])
-            status_combo.setCurrentText(row[8])
+            status_combo.setCurrentText(str(row[8]))
             status_combo.currentTextChanged.connect(lambda text, r_id=row[0]: self.update_status(r_id, text))
             self.table_sold.setCellWidget(idx, 6, status_combo)
             
             # 买家信息输入框
-            buyer_platform = QLineEdit(row[14])
-            buyer_name = QLineEdit(row[15])
-            buyer_id = QLineEdit(row[16])
+            buyer_platform = QLineEdit(str(row[14]))
+            buyer_name = QLineEdit(str(row[15]))
+            buyer_id = QLineEdit(str(row[16]))
             self.table_sold.setCellWidget(idx, 7, buyer_platform)
             self.table_sold.setCellWidget(idx, 8, buyer_name)
             self.table_sold.setCellWidget(idx, 9, buyer_id)
@@ -514,7 +561,7 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(self.tab_aftersales)
         
         self.table_aftersales = QTableWidget()
-        cols = ["序号", "所属账号", "精灵蛋名", "重量", "状态", "买家平台", "买家名称", "买家ID", "操作"]
+        cols = ["序号", "所属账号", "精灵蛋名", "重量", "状态", "买家平台", "买家名称", "买家ID"]
         self.table_aftersales.setColumnCount(len(cols))
         self.table_aftersales.setHorizontalHeaderLabels(cols)
         self.table_aftersales.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -528,31 +575,29 @@ class MainWindow(QMainWindow):
         for idx, row in enumerate(cursor.fetchall()):
             self.table_aftersales.insertRow(idx)
             self.table_aftersales.setItem(idx, 0, QTableWidgetItem(str(idx + 1)))
-            self.table_aftersales.setItem(idx, 1, QTableWidgetItem(row[1]))
-            self.table_aftersales.setItem(idx, 2, QTableWidgetItem(row[2]))
-            self.table_aftersales.setItem(idx, 4, QTableWidgetItem(row[5]))
-            self.table_aftersales.setItem(idx, 5, QTableWidgetItem(row[14]))
-            self.table_aftersales.setItem(idx, 6, QTableWidgetItem(row[15]))
-            self.table_aftersales.setItem(idx, 7, QTableWidgetItem(row[16]))
+            self.table_aftersales.setItem(idx, 1, QTableWidgetItem(str(row[1])))
+            self.table_aftersales.setItem(idx, 2, QTableWidgetItem(str(row[2])))
+            self.table_aftersales.setItem(idx, 3, QTableWidgetItem(str(row[5])))
+            self.table_aftersales.setItem(idx, 5, QTableWidgetItem(str(row[14])))
+            self.table_aftersales.setItem(idx, 6, QTableWidgetItem(str(row[15])))
+            self.table_aftersales.setItem(idx, 7, QTableWidgetItem(str(row[16])))
             
             # 状态选择 (需售后 / 已售后)
             status_combo = QComboBox()
             status_combo.addItems(["需售后", "已售后"])
-            status_combo.setCurrentText(row[8])
-            status_combo.currentTextChanged.connect(lambda text, r_id=row[0], r=idx: self.update_aftersales_status(r_id, text, r))
+            status_combo.setCurrentText(str(row[8]))
+            status_combo.currentTextChanged.connect(lambda text, r_id=row[0]: self.update_aftersales_status(r_id, text))
             self.table_aftersales.setCellWidget(idx, 4, status_combo)
             
-            # 底色处理
-            if row[8] == "需售后":
-                for col in range(8): self.table_aftersales.item(idx, col).setBackground(Qt.red)
-                self.table_aftersales.item(idx, 0).setBackground(Qt.red)
-            elif row[8] == "已售后":
-                for col in range(8): 
-                    if self.table_aftersales.item(idx, col):
-                        self.table_aftersales.item(idx, col).setBackground(Qt.green)
+            # 底色处理 (浅红/浅绿)
+            bg_color = QColor(255, 200, 200) if row[8] == "需售后" else QColor(200, 255, 200)
+            for col in range(len(cols)):
+                item = self.table_aftersales.item(idx, col)
+                if item:
+                    item.setBackground(bg_color)
         conn.close()
 
-    def update_aftersales_status(self, r_id, text, row_idx):
+    def update_aftersales_status(self, r_id, text):
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         cursor.execute("UPDATE eggs SET status=? WHERE id=?", (text, r_id))
