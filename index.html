@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>洛克王国精灵蛋仓库</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('warehouse')">仓库</button>
+        <button class="tab-btn" onclick="switchTab('production')">产线</button>
+        <button class="tab-btn" onclick="switchTab('sold')">已售出/补发</button>
+        <button class="tab-btn" onclick="switchTab('aftersales')">售后蛋</button>
+    </div>
+
+    <!-- 仓库页面 -->
+    <div id="warehouse" class="page active">
+        <div class="toolbar">
+            <button onclick="openEggModal()">添加精灵蛋</button>
+            <select id="filterAccount" onchange="loadWarehouse()"></select>
+            <select id="filterName" onchange="loadWarehouse()"></select>
+            <select id="filterMedal" onchange="loadWarehouse()">
+                <option value="全部奖牌">全部奖牌</option>
+                <option value="大块头">大块头</option>
+                <option value="满重">满重</option>
+                <option value="小不点">小不点</option>
+                <option value="满轻">满轻</option>
+                <option value="婉转声">婉转声</option>
+                <option value="满音婉转声">满音婉转声</option>
+                <option value="粗嗓门">粗嗓门</option>
+                <option value="满音粗嗓门">满音粗嗓门</option>
+            </select>
+            <select id="filterNest" onchange="loadWarehouse()">
+                <option value="全部窝">全部窝</option>
+                <option value="普窝">普窝</option>
+                <option value="绿窝">绿窝</option>
+            </select>
+            <select id="filterSort" onchange="loadWarehouse()">
+                <option value="默认排序">默认排序</option>
+                <option value="重量由轻到重">重量由轻到重</option>
+                <option value="重量由重到轻">重量由重到轻</option>
+                <option value="时间由近到远">时间由近到远</option>
+                <option value="时间由远到近">时间由远到近</option>
+            </select>
+        </div>
+        <table id="warehouseTable">
+            <thead>
+                <tr>
+                    <th>序号</th><th>所属账号</th><th>精灵蛋名</th><th>性格</th><th>尺寸</th><th>重量</th>
+                    <th>拿蛋日期</th><th>定价</th><th>状态</th><th>备注</th><th>尺寸奖牌</th><th>声音奖牌</th><th>窝类型</th><th>操作</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 产线页面 -->
+    <div id="production" class="page">
+        <div class="toolbar">
+            <button onclick="openProductionModal()">添加产线</button>
+        </div>
+        <table id="productionTable">
+            <thead>
+                <tr><th>序号</th><th>游戏账号名称</th><th>游戏账号ID</th><th>精灵蛋名</th><th>精灵蛋性格</th><th>分贝值</th><th>蛋组</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 已售出页面 -->
+    <div id="sold" class="page">
+        <table id="soldTable">
+            <thead>
+                <tr><th>序号</th><th>所属账号</th><th>精灵蛋名</th><th>性格</th><th>重量</th><th>定价</th><th>状态</th><th>买家平台</th><th>买家名称</th><th>买家ID</th><th>操作</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 售后页面 -->
+    <div id="aftersales" class="page">
+        <table id="aftersalesTable">
+            <thead>
+                <tr><th>序号</th><th>所属账号</th><th>精灵蛋名</th><th>重量</th><th>状态</th><th>买家平台</th><th>买家名称</th><th>买家ID</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <!-- 弹窗 -->
+    <div id="eggModal" class="modal">
+        <div class="modal-content">
+            <h3>添加/编辑精灵蛋</h3>
+            <div class="form-grid">
+                <label>所属账号:<input type="text" id="eggAccount"></label>
+                <label>精灵蛋名:<input type="text" id="eggName"></label>
+                <label>性格:<input type="text" id="eggPersonality" placeholder="点击选择"></label>
+                <label>尺寸:<input type="number" id="eggSize"></label>
+                <label>重量:<input type="number" id="eggWeight" step="0.1"></label>
+                <label>拿蛋日期:<input type="text" id="eggDate"></label>
+                <label>定价:<input type="number" id="eggPrice" step="0.01"></label>
+                <label>状态:<select id="eggStatus"><option>在库</option><option>已售出</option><option>需售后</option><option>补发蛋</option></select></label>
+                <label>备注:<input type="text" id="eggNotes"></label>
+                <label>尺寸奖牌:<select id="eggMedal1"><option>无</option><option>大块头</option><option>满重</option><option>小不点</option><option>满轻</option></select></label>
+                <label>声音奖牌:<select id="eggMedal2"><option>无</option><option>婉转声</option><option>满音婉转声</option><option>粗嗓门</option><option>满音粗嗓门</option></select></label>
+                <label>窝类型:<select id="eggNest"><option value="normal_nest">普窝</option><option value="green_nest">绿窝</option></select></label>
+            </div>
+            <div class="modal-actions">
+                <button onclick="saveEgg()">保存</button>
+                <button onclick="closeModal('eggModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
